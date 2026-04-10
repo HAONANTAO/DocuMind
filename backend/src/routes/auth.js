@@ -66,5 +66,11 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: '服务器错误', error: err.message })
   }
 })
+const auth = require('../middleware/auth')
 
+// 测试受保护接口
+router.get('/me', auth, async (req, res) => {
+  const user = await User.findById(req.userId).select('-passwordHash')
+  res.json(user)
+})
 module.exports = router
