@@ -11,13 +11,18 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@langchain/openai": "^0.6.17",
+    "@langchain/pinecone": "^0.2.0",
+    "@pinecone-database/pinecone": "^5.1.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "langchain": "^0.3.37",
     "mongoose": "^8.23.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.2.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
