@@ -96,6 +96,7 @@ router.post('/', auth, async (req, res) => {
     )
     await conversation.save()
   } catch (err) {
+    console.error('❌ Chat error:', err)
     res.status(500).json({ message: 'Server error', error: err.message })
   }
 })

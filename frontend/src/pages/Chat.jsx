@@ -63,7 +63,7 @@ export default function Chat() {
 
       // Use fetch instead of axios for SSE streaming
       const response = await fetch(
-        'https://documind-backend-r60i.onrender.com/api/chat',
+        'http://localhost:3001/api/chat',
         {
           method: 'POST',
           headers: {
