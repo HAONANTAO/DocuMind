@@ -2,7 +2,8 @@ import axios from 'axios'
 
 // Create an axios instance with the base URL of our backend
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  //render URL
+  baseURL: 'https://documind-backend-r60i.onrender.com',
 })
 
 // Automatically attach the JWT token to every request

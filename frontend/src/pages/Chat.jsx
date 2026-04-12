@@ -58,14 +58,17 @@ export default function Chat() {
       const token = localStorage.getItem('token')
 
       // Use fetch instead of axios for SSE streaming
-      const response = await fetch('http://localhost:3001/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        'https://documind-backend-r60i.onrender.com/api/chat',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ documentId, question: userMessage.content }),
         },
-        body: JSON.stringify({ documentId, question: userMessage.content }),
-      })
+      )
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
