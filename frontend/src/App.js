@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Documents from './pages/Documents'
 import Chat from './pages/Chat'
@@ -34,7 +35,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/documents" />} />
+          <Route path="/" element={<Landing />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

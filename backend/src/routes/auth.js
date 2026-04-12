@@ -2,27 +2,37 @@ const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const auth = require('../middleware/auth')
 
 const router = express.Router()
 
-// 注册
+/**
+ * POST /api/auth/register
+ * Create a new user account.
+ *
+ * - Rejects duplicate emails before hashing (fast path)
+ * - Hashes password with bcrypt at cost factor 10
+ * - Returns a signed JWT valid for 7 days alongside the new user object
+ *
+ * @param {string} req.body.email
+ * @param {string} req.body.password - Plain-text; never stored
+ */
 router.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body
 
-    // 检查用户是否已存在
+    // Reject duplicate accounts before doing any expensive work
     const existingUser = await User.findOne({ email })
     if (existingUser) {
-      return res.status(400).json({ message: '该邮箱已被注册' })
+      return res.status(400).json({ message: 'Email already registered' })
     }
 
-    // 加密密码
+    // bcrypt cost factor 10 — ~100ms on modern hardware, impractical to brute-force
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // 创建用户
     const user = await User.create({ email, passwordHash })
 
-    // 生成Token
+    // Sign a JWT containing only userId — keeps the payload small
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     })
@@ -32,28 +42,37 @@ router.post('/register', async (req, res) => {
       user: { id: user._id, email: user.email, plan: user.plan },
     })
   } catch (err) {
-    res.status(500).json({ message: '服务器错误', error: err.message })
+    res.status(500).json({ message: 'Server error', error: err.message })
   }
 })
 
-// 登录
+/**
+ * POST /api/auth/login
+ * Authenticate an existing user and return a JWT.
+ *
+ * - Returns the same vague error for missing user AND wrong password
+ *   to prevent user-enumeration attacks
+ *
+ * @param {string} req.body.email
+ * @param {string} req.body.password
+ */
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
 
-    // 查找用户
     const user = await User.findOne({ email })
+
+    // Deliberate: same message for "no such user" and "wrong password"
+    // so attackers cannot enumerate registered emails
     if (!user) {
-      return res.status(400).json({ message: '邮箱或密码错误' })
+      return res.status(400).json({ message: 'Invalid email or password' })
     }
 
-    // 验证密码
     const isMatch = await bcrypt.compare(password, user.passwordHash)
     if (!isMatch) {
-      return res.status(400).json({ message: '邮箱或密码错误' })
+      return res.status(400).json({ message: 'Invalid email or password' })
     }
 
-    // 生成Token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     })
@@ -63,14 +82,19 @@ router.post('/login', async (req, res) => {
       user: { id: user._id, email: user.email, plan: user.plan },
     })
   } catch (err) {
-    res.status(500).json({ message: '服务器错误', error: err.message })
+    res.status(500).json({ message: 'Server error', error: err.message })
   }
 })
-const auth = require('../middleware/auth')
 
-// 测试受保护接口
+/**
+ * GET /api/auth/me
+ * Return the currently authenticated user's profile.
+ * Requires a valid JWT in the Authorization header.
+ * The passwordHash field is stripped from the response.
+ */
 router.get('/me', auth, async (req, res) => {
   const user = await User.findById(req.userId).select('-passwordHash')
   res.json(user)
 })
+
 module.exports = router

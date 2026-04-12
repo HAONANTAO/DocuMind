@@ -9,12 +9,18 @@ const router = express.Router()
 
 /**
  * POST /api/chat
- * Send a message and get an AI response based on the document
- * Uses Server-Sent Events (SSE) for streaming — the AI responds
- * token by token so the frontend can show a typewriter effect
+ * Send a question and stream the AI answer back using Server-Sent Events (SSE).
  *
- * SSE works by keeping the HTTP connection open and sending
- * small chunks of data as they become available
+ * SSE keeps the HTTP connection open so the server can push data incrementally.
+ * The frontend reads the stream token-by-token and appends each one to the
+ * message bubble, creating a typewriter effect without polling.
+ *
+ * Event format (newline-delimited):
+ *   data: {"token": "Hello"}        ← one token per event during generation
+ *   data: {"done": true, "sources": [...]}  ← final event with citations
+ *
+ * @param {string} req.body.documentId - The document to query
+ * @param {string} req.body.question   - The user's natural-language question
  */
 router.post('/', auth, async (req, res) => {
   try {
@@ -26,11 +32,12 @@ router.post('/', auth, async (req, res) => {
         .json({ message: 'documentId and question are required' })
     }
 
-    // Make sure the document exists and belongs to this user
+    // Verify the document exists, belongs to this user, and is fully indexed.
+    // status: 'ready' means all chunks have been embedded and stored in Pinecone.
     const document = await Document.findOne({
       _id: documentId,
       userId: req.userId,
-      status: 'ready', // Only allow querying documents that are fully processed
+      status: 'ready',
     })
 
     if (!document) {
@@ -39,7 +46,8 @@ router.post('/', auth, async (req, res) => {
         .json({ message: 'Document not found or not ready' })
     }
 
-    // Find or create a conversation for this user + document pair
+    // One conversation document per (userId, documentId) pair.
+    // Created lazily on the first message so there is no empty conversation overhead.
     let conversation = await Conversation.findOne({
       userId: req.userId,
       documentId,
@@ -53,16 +61,16 @@ router.post('/', auth, async (req, res) => {
       })
     }
 
-    // Build chat history for multi-turn conversation
-    // Convert stored messages to LangChain message format
-    const chatHistory = conversation.messages.slice(-6).map((msg) => {
-      // Only use the last 6 messages to keep the context window manageable
-      return msg.role === 'user'
+    // Pass the last 6 messages as context so the AI can handle follow-up questions.
+    // Capping at 6 keeps the prompt within a predictable token budget.
+    const chatHistory = conversation.messages.slice(-6).map((msg) =>
+      msg.role === 'user'
         ? new HumanMessage(msg.content)
-        : new AIMessage(msg.content)
-    })
+        : new AIMessage(msg.content),
+    )
 
-    // Set up SSE headers — this keeps the connection open for streaming
+    // Switch the response to SSE mode.
+    // After these headers are sent, the connection stays open until res.end().
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
@@ -70,14 +78,15 @@ router.post('/', auth, async (req, res) => {
     let fullAnswer = ''
     let sources = []
 
-    // Run the RAG query and stream tokens to the client
+    // ragQuery calls the onToken callback for every token the LLM produces.
+    // We immediately write each token as an SSE event so the frontend can
+    // display it without waiting for the full response.
     const result = await ragQuery(
       question,
       documentId,
       req.userId,
       chatHistory,
       (token) => {
-        // Every time the AI generates a token, send it to the frontend
         res.write(`data: ${JSON.stringify({ token })}\n\n`)
         fullAnswer += token
       },
@@ -85,11 +94,12 @@ router.post('/', auth, async (req, res) => {
 
     sources = result.sources
 
-    // Send the sources after the answer is complete
+    // Signal completion and send source citations in the final event
     res.write(`data: ${JSON.stringify({ done: true, sources })}\n\n`)
     res.end()
 
-    // Save both the user question and AI answer to conversation history
+    // Persist the exchange to MongoDB after the stream closes.
+    // This happens after res.end() so it never delays the client.
     conversation.messages.push(
       { role: 'user', content: question },
       { role: 'assistant', content: fullAnswer, sources },

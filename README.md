@@ -1,5 +1,10 @@
 # DocuMind
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)
+![React](https://img.shields.io/badge/react-19-61dafb.svg)
+[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://docu-mind-neon.vercel.app)
+
 **AI-powered document Q&A SaaS built with Retrieval-Augmented Generation (RAG)**
 
 Upload any PDF and instantly chat with it. DocuMind indexes your document into a vector database, then uses semantic search and a large language model to answer your questions — grounded in your actual content, with source citations.
@@ -168,16 +173,16 @@ cd frontend
 npm install
 ```
 
-Create `frontend/.env`:
+Copy the example env file and fill in the local backend URL:
+
+```bash
+cp .env.example .env.local
+```
+
+`.env.local` is gitignored and will not be committed. Its contents:
 
 ```env
 REACT_APP_API_URL=http://localhost:3001/api
-```
-
-Then update `frontend/src/api/axios.js` to use the env variable:
-
-```js
-baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api'
 ```
 
 Start the frontend:
@@ -365,6 +370,24 @@ DocuMind/
             ├── Chat.jsx              # Streaming chat interface
             └── Pricing.jsx           # Pricing tiers
 ```
+
+---
+
+## Screenshots
+
+> Coming soon
+
+---
+
+## Roadmap
+
+Planned features for future releases:
+
+- [ ] **PDF viewer with highlighted source citations** — display the source page inline with the relevant passage highlighted, so users can verify answers without leaving the app
+- [ ] **Stripe payment integration for Pro plan** — full billing flow for upgrading to Pro, managing subscriptions, and handling webhooks
+- [ ] **Team workspaces** — shared document libraries with role-based access (owner, editor, viewer) for organisations
+- [ ] **Support for more file types** — DOCX, TXT, Markdown, and web page URLs in addition to PDF
+- [ ] **Mobile app** — React Native client with the same core Q&A experience optimised for smaller screens
 
 ---
 

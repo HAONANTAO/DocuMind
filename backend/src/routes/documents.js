@@ -1,18 +1,22 @@
 const express = require('express')
 const multer = require('multer')
-const { PineconeStore } = require('@langchain/pinecone')
 const Document = require('../models/Document')
 const auth = require('../middleware/auth')
 const { processDocument } = require('../config/documentProcessor')
-const { getPineconeIndex, embeddings } = require('../config/rag')
+const { getPineconeIndex } = require('../config/rag')
 
 const router = express.Router()
 
 /**
- * Configure multer for file uploads
- * memoryStorage stores the file in memory as a Buffer
- * instead of saving it to disk — we only need it temporarily
- * to process and vectorize, then we discard it
+ * Multer middleware — handles multipart/form-data file uploads.
+ *
+ * memoryStorage keeps the file in a Buffer on req.file.buffer rather
+ * than writing it to disk. This makes the server stateless: any instance
+ * can handle any upload without needing a shared filesystem.
+ *
+ * Limits:
+ *   - 20 MB max file size (large PDFs can exceed OpenAI embedding limits per request)
+ *   - PDF MIME type only (other types are not yet supported by the parser)
  */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -29,12 +33,17 @@ const upload = multer({
 
 /**
  * POST /api/documents/upload
- * Upload and process a PDF document
+ * Upload a PDF and kick off async RAG indexing.
  *
- * Flow:
- * 1. Save document metadata to MongoDB with status "uploading"
- * 2. Trigger async processing (PDF → chunks → vectors → Pinecone)
- * 3. Update status to "ready" when done, or "error" if it fails
+ * The response is returned immediately (status 201) so the user never
+ * waits for the embedding pipeline to finish. The frontend polls
+ * GET /api/documents until the status field changes to "ready".
+ *
+ * Status lifecycle:  uploading → processing → ready | error
+ *
+ * Note on filename encoding: HTTP multipart headers are transmitted as
+ * latin1 by default. Non-ASCII filenames (e.g. Chinese characters) must
+ * be re-decoded from latin1 → utf8 to display correctly.
  */
 router.post('/upload', auth, upload.single('file'), async (req, res) => {
   try {
@@ -45,7 +54,7 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
     // Step 1: Save document metadata to MongoDB
     const document = await Document.create({
       userId: req.userId,
-      fileName: req.file.originalname,
+      fileName: Buffer.from(req.file.originalname, 'latin1').toString('utf8'),
       fileSize: req.file.size,
       status: 'uploading',
     })
@@ -106,7 +115,11 @@ router.get('/', auth, async (req, res) => {
 
 /**
  * DELETE /api/documents/:id
- * Delete a document from MongoDB and remove all its vectors from Pinecone
+ * Hard-delete a document: removes the MongoDB record AND all associated
+ * Pinecone vectors so storage is fully reclaimed.
+ *
+ * The userId check on findOne prevents users from deleting each other's
+ * documents even if they know a valid document ID.
  */
 router.delete('/:id', auth, async (req, res) => {
   try {
@@ -119,18 +132,23 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Document not found' })
     }
 
-    // Delete from MongoDB
+    // Delete from MongoDB first — this must always succeed
     await document.deleteOne()
 
-    // Delete all vectors for this document from Pinecone
-    const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
-      pineconeIndex: getPineconeIndex(),
-      namespace: `user_${req.userId}`,
-      filter: { documentId: document._id.toString() },
-    })
-    await vectorStore.delete({
-      filter: { documentId: document._id.toString() },
-    })
+    // Delete all vectors for this document from Pinecone.
+    // Wrapped in its own try-catch: a Pinecone failure should not cause the
+    // overall request to fail (the document is already gone from MongoDB).
+    try {
+      const pineconeIndex = getPineconeIndex()
+      // Use the native Pinecone SDK to delete by metadata filter.
+      // LangChain's PineconeStore.delete() only accepts { ids } or { deleteAll },
+      // not { filter }, so we bypass it here.
+      await pineconeIndex
+        .namespace(`user_${req.userId}`)
+        .deleteMany({ documentId: document._id.toString() })
+    } catch (pineconeErr) {
+      console.warn('⚠️  Pinecone vector cleanup failed (non-critical):', pineconeErr.message)
+    }
 
     res.json({ message: 'Document deleted' })
   } catch (err) {
