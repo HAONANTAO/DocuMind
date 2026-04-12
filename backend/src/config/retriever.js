@@ -59,7 +59,8 @@ const ragQuery = async (
     new SystemMessage(`You are a professional document Q&A assistant.
 Answer questions ONLY based on the provided document content.
 Do NOT use any knowledge outside of the provided content.
-If the answer cannot be found in the document, say "I could not find relevant information in the document."
+If the answer cannot be found in the document, respond with:
+"I couldn't find specific information about that in this document. Try asking about specific topics, key people, dates, or sections you're looking for."
 Keep your answers concise and accurate.`),
     ...chatHistory, // Include chat history to support multi-turn conversation
     new HumanMessage(`Please answer the following question based on the document content below:
