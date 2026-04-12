@@ -1,8 +1,10 @@
 const express = require('express')
 const multer = require('multer')
+const { PineconeStore } = require('@langchain/pinecone')
 const Document = require('../models/Document')
 const auth = require('../middleware/auth')
 const { processDocument } = require('../config/documentProcessor')
+const { getPineconeIndex, embeddings } = require('../config/rag')
 
 const router = express.Router()
 
@@ -104,8 +106,7 @@ router.get('/', auth, async (req, res) => {
 
 /**
  * DELETE /api/documents/:id
- * Delete a document from MongoDB
- * TODO: Also delete vectors from Pinecone
+ * Delete a document from MongoDB and remove all its vectors from Pinecone
  */
 router.delete('/:id', auth, async (req, res) => {
   try {
@@ -118,7 +119,19 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Document not found' })
     }
 
+    // Delete from MongoDB
     await document.deleteOne()
+
+    // Delete all vectors for this document from Pinecone
+    const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
+      pineconeIndex: getPineconeIndex(),
+      namespace: `user_${req.userId}`,
+      filter: { documentId: document._id.toString() },
+    })
+    await vectorStore.delete({
+      filter: { documentId: document._id.toString() },
+    })
+
     res.json({ message: 'Document deleted' })
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message })

@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { marked } from 'marked'
 import api from '../api/axios'
+
+// Renders markdown with prose styling — drop-in equivalent of ReactMarkdown
+// (react-markdown is ESM-only and incompatible with Create React App)
+const ReactMarkdown = ({ children, className }) => (
+  <div
+    className={className}
+    dangerouslySetInnerHTML={{ __html: marked.parse(children || '') }}
+  />
+)
 
 export default function Chat() {
   const { documentId } = useParams()
@@ -162,10 +172,12 @@ export default function Chat() {
                 // Assistant message — left aligned
                 <div className="flex flex-col gap-2">
                   <div className="bg-gray-900 rounded-2xl rounded-tl-sm px-4 py-3 max-w-xl">
-                    {msg.content || (
-                      <span className="text-gray-500 animate-pulse">
-                        Thinking...
-                      </span>
+                    {msg.content ? (
+                      <ReactMarkdown className="prose prose-invert prose-sm max-w-none">
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <span className="text-gray-500 animate-pulse">Thinking...</span>
                     )}
                   </div>
 
