@@ -88,6 +88,11 @@ export default function Documents() {
         <div className="flex items-center gap-4">
           <span className="text-gray-400 text-sm">{user?.email}</span>
           <button
+            onClick={() => navigate('/pricing')}
+            className="text-sm text-gray-400 hover:text-white transition">
+            Pricing
+          </button>
+          <button
             onClick={handleLogout}
             className="text-sm text-gray-400 hover:text-white transition">
             Logout

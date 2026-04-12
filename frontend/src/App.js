@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Documents from './pages/Documents'
 import Chat from './pages/Chat'
-
+import Pricing from './pages/Pricing'
 // ProtectedRoute — if user is not logged in, redirect to /login
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -25,6 +25,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/pricing" element={<Pricing />} />
           <Route
             path="/chat/:documentId"
             element={
@@ -41,4 +42,3 @@ function App() {
 }
 
 export default App
-  
