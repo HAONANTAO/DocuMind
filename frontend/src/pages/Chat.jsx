@@ -17,6 +17,8 @@ export default function Chat() {
   }, [messages])
 
   // Load document name and chat history on page load
+  // Load document name and chat history on page load
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchDocumentName()
     fetchHistory()
