@@ -5,12 +5,7 @@ require('dotenv').config()
 
 const app = express()
 
-app.use(
-  cors({
-    origin: ['https://docu-mind-neon.vercel.app', 'http://localhost:3000'],
-    credentials: true,
-  }),
-)
+app.use(cors())
 app.use(express.json())
 const authRoutes = require('./routes/auth')
 app.use('/api/auth', authRoutes)
