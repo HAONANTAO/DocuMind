@@ -20,10 +20,12 @@ export default function Chat() {
   // Load document name and chat history on page load
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    fetchDocumentName()
-    fetchHistory()
-  }, [])
-
+    const init = async () => {
+      await fetchDocumentName()
+      await fetchHistory()
+    }
+    init()
+  }, [documentId]) // eslint-disable-line react-hooks/exhaustive-deps
   const fetchDocumentName = async () => {
     try {
       const res = await api.get('/documents')
