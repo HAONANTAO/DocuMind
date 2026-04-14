@@ -71,6 +71,32 @@ const SourceCard = ({ source, index }) => {
   )
 }
 
+// Collapsible sources section — hidden by default, click to expand
+const SourcesSection = ({ sources }) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="ml-1">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-300 transition px-1 py-0.5">
+        <svg
+          className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`}
+          fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+        {sources.length} source{sources.length > 1 ? 's' : ''} used
+      </button>
+      {open && (
+        <div className="space-y-1.5 mt-1.5">
+          {sources.map((source, i) => (
+            <SourceCard key={i} source={source} index={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Status badge for each document in the sidebar
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -341,16 +367,9 @@ export default function Chat() {
                       )}
                     </div>
 
-                    {/* Source citations */}
+                    {/* Source citations — collapsed by default */}
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="space-y-1.5 ml-1">
-                        <p className="text-[11px] text-gray-500 px-1">
-                          {msg.sources.length} source{msg.sources.length > 1 ? 's' : ''} used
-                        </p>
-                        {msg.sources.map((source, i) => (
-                          <SourceCard key={i} source={source} index={i} />
-                        ))}
-                      </div>
+                      <SourcesSection sources={msg.sources} />
                     )}
                   </div>
                 )}
