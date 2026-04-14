@@ -86,7 +86,7 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
           chunkCount,
         })
       } catch (err) {
-        // If anything fails, mark as error
+        console.error('❌ Document processing error:', err)
         await Document.findByIdAndUpdate(document._id, {
           status: 'error',
           errorMessage: err.message,
