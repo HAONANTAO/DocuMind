@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import api from '../api/axios'
 
 // Renders markdown with prose styling — drop-in equivalent of ReactMarkdown
@@ -8,7 +9,9 @@ import api from '../api/axios'
 const ReactMarkdown = ({ children, className }) => (
   <div
     className={className}
-    dangerouslySetInnerHTML={{ __html: marked.parse(children || '') }}
+    dangerouslySetInnerHTML={{
+      __html: DOMPurify.sanitize(marked.parse(children || '')),
+    }}
   />
 )
 
@@ -154,7 +157,7 @@ export default function Chat() {
 
       // Use fetch instead of axios for SSE streaming
       const response = await fetch(
-        'https://documind-backend-r60i.onrender.com/api/chat',
+        `${process.env.REACT_APP_API_URL}/chat`,
         {
           method: 'POST',
           headers: {
@@ -205,6 +208,18 @@ export default function Chat() {
               updated[updated.length - 1] = {
                 ...last,
                 sources: data.sources,
+              }
+              return updated
+            })
+          }
+
+          if (data.error) {
+            // Server sent an error mid-stream — replace the placeholder with an error message
+            setMessages((prev) => {
+              const updated = [...prev]
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                content: `Sorry, something went wrong: ${data.error}`,
               }
               return updated
             })

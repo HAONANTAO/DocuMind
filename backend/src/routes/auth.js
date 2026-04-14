@@ -93,8 +93,12 @@ router.post('/login', async (req, res) => {
  * The passwordHash field is stripped from the response.
  */
 router.get('/me', auth, async (req, res) => {
-  const user = await User.findById(req.userId).select('-passwordHash')
-  res.json(user)
+  try {
+    const user = await User.findById(req.userId).select('-passwordHash')
+    res.json(user)
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message })
+  }
 })
 
 module.exports = router

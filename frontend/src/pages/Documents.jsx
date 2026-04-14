@@ -15,12 +15,17 @@ export default function Documents() {
     fetchDocuments()
   }, [])
 
-  // Poll every 3 seconds to update document status
-  // This lets us show uploading → processing → ready in real time
+  // Poll every 3 seconds, but only while at least one document is still processing.
+  // Once all documents are ready (or errored), stop polling to avoid wasting requests.
   useEffect(() => {
+    const hasPending = documents.some(
+      (d) => d.status === 'uploading' || d.status === 'processing',
+    )
+    if (!hasPending) return
+
     const interval = setInterval(fetchDocuments, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [documents])
 
   const fetchDocuments = async () => {
     try {

@@ -155,6 +155,7 @@ JWT_SECRET=your_jwt_secret_at_least_32_chars
 PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_INDEX=documind
 OPENAI_API_KEY=your_openai_api_key
+ALLOWED_ORIGIN=http://localhost:3000
 ```
 
 Start the backend:
@@ -207,19 +208,20 @@ The app will be available at `http://localhost:3000`.
 | `PINECONE_API_KEY` | Pinecone API key | Yes |
 | `PINECONE_INDEX` | Pinecone index name (must be `documind`) | Yes |
 | `OPENAI_API_KEY` | OpenAI API key | Yes |
+| `ALLOWED_ORIGIN` | Frontend origin allowed by CORS (e.g. `https://your-app.vercel.app`). If unset, all origins are allowed — **must be set in production** | No (dev only) |
 
 ### Frontend
 
 | Variable | Description | Required |
 |---|---|---|
-| `REACT_APP_API_URL` | Backend API base URL | No (see axios.js) |
+| `REACT_APP_API_URL` | Backend API base URL (e.g. `https://your-backend.onrender.com/api`) | Yes (production) |
 | `DISABLE_ESLINT_PLUGIN` | Disable ESLint during build | No |
 
 ---
 
 ## API Endpoints
 
-Base URL: `https://documind-backend-r60i.onrender.com/api`
+Base URL: `https://<your-backend-domain>/api`
 
 All protected routes require the header:
 ```

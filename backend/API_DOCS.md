@@ -53,7 +53,7 @@ Create a `.env` file in the backend root. All variables below are required.
 
 ```env
 # Server
-PORT=5000
+PORT=3001
 
 # MongoDB
 MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/documind
@@ -77,6 +77,7 @@ PINECONE_INDEX=documind
 | `OPENAI_API_KEY` | OpenAI API key (used for embeddings and chat) |
 | `PINECONE_API_KEY` | Pinecone API key |
 | `PINECONE_INDEX` | Name of the Pinecone index (e.g. `documind`) |
+| `ALLOWED_ORIGIN` | Frontend origin allowed by CORS (e.g. `https://your-app.vercel.app`). If unset, all origins are allowed — must be set in production. |
 
 ---
 
@@ -155,7 +156,7 @@ Create a new user account.
 
 **Example**
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
+curl -X POST http://localhost:3001/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"secret123"}'
 ```
@@ -197,7 +198,7 @@ Log in with an existing account.
 
 **Example**
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
+curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"secret123"}'
 ```
@@ -225,7 +226,7 @@ Return the profile of the currently authenticated user.
 
 **Example**
 ```bash
-curl http://localhost:5000/api/auth/me \
+curl http://localhost:3001/api/auth/me \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -286,7 +287,7 @@ Poll `GET /api/documents` to track status until it reaches `ready`.
 
 **Example**
 ```bash
-curl -X POST http://localhost:5000/api/documents/upload \
+curl -X POST http://localhost:3001/api/documents/upload \
   -H "Authorization: Bearer <token>" \
   -F "file=@/path/to/document.pdf"
 ```
@@ -318,7 +319,7 @@ List all documents uploaded by the authenticated user, sorted newest first.
 
 **Example**
 ```bash
-curl http://localhost:5000/api/documents \
+curl http://localhost:3001/api/documents \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -326,9 +327,7 @@ curl http://localhost:5000/api/documents \
 
 #### `DELETE /api/documents/:id`
 
-Delete a document record from MongoDB.
-
-> **Note:** Pinecone vectors for this document are not currently deleted (marked as TODO in the source).
+Delete a document from MongoDB and remove all associated vectors from Pinecone.
 
 **Authentication:** Required
 
@@ -352,7 +351,7 @@ Delete a document record from MongoDB.
 
 **Example**
 ```bash
-curl -X DELETE http://localhost:5000/api/documents/664b2e3f4d5c6a7b8e9f0a1b \
+curl -X DELETE http://localhost:3001/api/documents/664b2e3f4d5c6a7b8e9f0a1b \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -424,7 +423,7 @@ The last 6 messages of the conversation are included as context for multi-turn d
 
 **Example**
 ```bash
-curl -X POST http://localhost:5000/api/chat \
+curl -X POST http://localhost:3001/api/chat \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
@@ -481,7 +480,7 @@ Returns an empty messages array if no conversation exists yet.
 
 **Example**
 ```bash
-curl http://localhost:5000/api/chat/664b2e3f4d5c6a7b8e9f0a1b/history \
+curl http://localhost:3001/api/chat/664b2e3f4d5c6a7b8e9f0a1b/history \
   -H "Authorization: Bearer <token>"
 ```
 

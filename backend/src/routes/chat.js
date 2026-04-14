@@ -107,7 +107,15 @@ router.post('/', auth, async (req, res) => {
     await conversation.save()
   } catch (err) {
     console.error('❌ Chat error:', err)
-    res.status(500).json({ message: 'Server error', error: err.message })
+    // If SSE headers have already been sent, we can't call res.status().json()
+    // — that would throw "Cannot set headers after they are sent".
+    // Instead, push an error event down the open stream so the frontend knows.
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
+      res.end()
+    } else {
+      res.status(500).json({ message: 'Server error', error: err.message })
+    }
   }
 })
 
