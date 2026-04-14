@@ -6,7 +6,7 @@ require('dotenv').config()
 const app = express()
 
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN,
+  origin: process.env.ALLOWED_ORIGIN || '*',
   credentials: true,
 }))
 app.use(express.json())
