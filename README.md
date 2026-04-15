@@ -22,6 +22,7 @@ Upload any PDF and instantly chat with it. DocuMind indexes your document into a
 - **Async Document Processing** — Upload returns immediately; indexing runs in the background with real-time status updates
 - **Secure Multi-tenancy** — Each user's documents and vectors are isolated by namespace in the vector database
 - **JWT Authentication** — Stateless auth with 7-day token expiry and bcrypt password hashing
+- **Free Plan Limits** — 2 documents and 10 questions per week, with real-time usage bars
 
 ---
 
@@ -235,6 +236,7 @@ Authorization: Bearer <jwt_token>
 | `POST` | `/auth/register` | No | Create a new account |
 | `POST` | `/auth/login` | No | Login and receive a JWT |
 | `GET` | `/auth/me` | Yes | Get current user profile |
+| `GET` | `/auth/usage` | Yes | Get current plan usage stats |
 
 **Register / Login request body:**
 ```json
@@ -387,6 +389,7 @@ Planned features for future releases:
 
 - [ ] **PDF viewer with highlighted source citations** — display the source page inline with the relevant passage highlighted, so users can verify answers without leaving the app
 - [ ] **Stripe payment integration for Pro plan** — full billing flow for upgrading to Pro, managing subscriptions, and handling webhooks
+- [ ] **AI Agent mode** — let the AI autonomously decide whether to retrieve from the document or answer directly, rather than always forcing a RAG lookup
 - [ ] **Team workspaces** — shared document libraries with role-based access (owner, editor, viewer) for organisations
 - [ ] **Support for more file types** — DOCX, TXT, Markdown, and web page URLs in addition to PDF
 - [ ] **Mobile app** — React Native client with the same core Q&A experience optimised for smaller screens

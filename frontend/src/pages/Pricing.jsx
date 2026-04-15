@@ -7,8 +7,8 @@ const plans = [
     period: 'forever',
     description: 'Perfect for trying out DocuMind',
     features: [
-      'Up to 3 documents',
-      '50 questions per month',
+      'Up to 2 documents',
+      '10 questions per week',
       'PDF upload support',
       'Source citations',
       'Chat history',

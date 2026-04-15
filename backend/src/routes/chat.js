@@ -2,6 +2,7 @@ const express = require('express')
 const { HumanMessage, AIMessage } = require('@langchain/core/messages')
 const auth = require('../middleware/auth')
 const Document = require('../models/Document')
+const User = require('../models/User')
 const Conversation = require('../models/Conversation')
 const { ragQuery } = require('../config/retriever')
 
@@ -30,6 +31,24 @@ router.post('/', auth, async (req, res) => {
       return res
         .status(400)
         .json({ message: 'documentId and question are required' })
+    }
+
+    // Check free plan weekly question limit
+    const user = await User.findById(req.userId)
+    if (user.plan === 'free') {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const conversations = await Conversation.find({ userId: req.userId })
+      let weeklyQuestions = 0
+      for (const conv of conversations) {
+        weeklyQuestions += conv.messages.filter(
+          (m) => m.role === 'user' && new Date(m.createdAt) > oneWeekAgo,
+        ).length
+      }
+      if (weeklyQuestions >= 10) {
+        return res.status(403).json({
+          message: 'Free plan limit reached: 10 questions per week. Upgrade to Pro for unlimited questions.',
+        })
+      }
     }
 
     // Verify the document exists, belongs to this user, and is fully indexed.

@@ -7,12 +7,14 @@ export default function Documents() {
   const [documents, setDocuments] = useState([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [usage, setUsage] = useState(null)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   // Fetch documents on page load
   useEffect(() => {
     fetchDocuments()
+    fetchUsage()
   }, [])
 
   // Poll every 3 seconds, but only while at least one document is still processing.
@@ -36,6 +38,15 @@ export default function Documents() {
     }
   }
 
+  const fetchUsage = async () => {
+    try {
+      const res = await api.get('/auth/usage')
+      setUsage(res.data)
+    } catch (err) {
+      console.error('Failed to fetch usage')
+    }
+  }
+
   const handleUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -56,6 +67,7 @@ export default function Documents() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       fetchDocuments()
+      fetchUsage()
     } catch (err) {
       setError(err.response?.data?.message || 'Upload failed')
     } finally {
@@ -67,6 +79,7 @@ export default function Documents() {
     try {
       await api.delete(`/documents/${id}`)
       setDocuments(documents.filter((d) => d._id !== id))
+      fetchUsage()
     } catch (err) {
       setError('Failed to delete document')
     }
@@ -128,6 +141,34 @@ export default function Documents() {
             />
           </label>
         </div>
+
+        {/* Usage bars — compact, free plan only */}
+        {usage && usage.plan === 'free' && (
+          <div className="flex items-center gap-6 bg-gray-900 rounded-xl px-4 py-3 mb-6">
+            {[
+              { label: 'Docs', used: usage.docs.used, limit: usage.docs.limit },
+              { label: 'Questions / week', used: usage.questions.used, limit: usage.questions.limit },
+            ].map(({ label, used, limit }) => (
+              <div key={label} className="flex-1">
+                <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+                  <span>{label}</span>
+                  <span className={used >= limit ? 'text-red-400' : ''}>{used}/{limit}</span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-1">
+                  <div
+                    className={`h-1 rounded-full transition-all ${used >= limit ? 'bg-red-500' : 'bg-blue-500'}`}
+                    style={{ width: `${Math.min((used / limit) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => navigate('/pricing')}
+              className="text-[11px] text-blue-400 hover:text-blue-300 transition shrink-0">
+              Upgrade →
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg px-4 py-3 mb-6 text-sm">

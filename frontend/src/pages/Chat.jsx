@@ -132,6 +132,7 @@ export default function Chat() {
 
   // ── Sidebar state ───────────────────────────────────────────────────────────
   const [documents, setDocuments] = useState([])
+  const [usage, setUsage] = useState(null)
 
   // Auto-scroll to newest message
   useEffect(() => {
@@ -142,7 +143,17 @@ export default function Chat() {
   useEffect(() => {
     fetchDocuments()
     fetchHistory()
+    fetchUsage()
   }, [documentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchUsage = async () => {
+    try {
+      const res = await api.get('/auth/usage')
+      setUsage(res.data)
+    } catch (err) {
+      console.error('Failed to fetch usage')
+    }
+  }
 
   const fetchDocuments = async () => {
     try {
@@ -310,6 +321,36 @@ export default function Chat() {
             })
           )}
         </div>
+
+        {/* Usage — compact, free plan only */}
+        {usage && usage.plan === 'free' && (
+          <div className="px-4 py-3 border-t border-gray-800 space-y-2">
+            <div>
+              <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+                <span>Docs</span>
+                <span className={usage.docs.used >= usage.docs.limit ? 'text-red-400' : ''}>{usage.docs.used}/{usage.docs.limit}</span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-1">
+                <div
+                  className={`h-1 rounded-full ${usage.docs.used >= usage.docs.limit ? 'bg-red-500' : 'bg-blue-500'}`}
+                  style={{ width: `${Math.min((usage.docs.used / usage.docs.limit) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+                <span>Questions this week</span>
+                <span className={usage.questions.used >= usage.questions.limit ? 'text-red-400' : ''}>{usage.questions.used}/{usage.questions.limit}</span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-1">
+                <div
+                  className={`h-1 rounded-full ${usage.questions.used >= usage.questions.limit ? 'bg-red-500' : 'bg-blue-500'}`}
+                  style={{ width: `${Math.min((usage.questions.used / usage.questions.limit) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Upload New button */}
         <div className="p-4 border-t border-gray-800">

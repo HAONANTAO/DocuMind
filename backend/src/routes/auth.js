@@ -2,6 +2,8 @@ const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const Document = require('../models/Document')
+const Conversation = require('../models/Conversation')
 const auth = require('../middleware/auth')
 
 const router = express.Router()
@@ -96,6 +98,38 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-passwordHash')
     res.json(user)
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message })
+  }
+})
+
+/**
+ * GET /api/auth/usage
+ * Return the current user's plan usage stats for display in the UI.
+ */
+router.get('/usage', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId)
+
+    const DOC_LIMIT = { free: 2, pro: Infinity }
+    const QUESTION_LIMIT = { free: 10, pro: Infinity }
+
+    const docCount = await Document.countDocuments({ userId: req.userId })
+
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const conversations = await Conversation.find({ userId: req.userId })
+    let weeklyQuestions = 0
+    for (const conv of conversations) {
+      weeklyQuestions += conv.messages.filter(
+        (m) => m.role === 'user' && new Date(m.createdAt) > oneWeekAgo,
+      ).length
+    }
+
+    res.json({
+      plan: user.plan,
+      docs: { used: docCount, limit: DOC_LIMIT[user.plan] },
+      questions: { used: weeklyQuestions, limit: QUESTION_LIMIT[user.plan] },
+    })
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message })
   }

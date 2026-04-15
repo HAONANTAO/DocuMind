@@ -1,6 +1,7 @@
 const express = require('express')
 const multer = require('multer')
 const Document = require('../models/Document')
+const User = require('../models/User')
 const auth = require('../middleware/auth')
 const { processDocument } = require('../config/documentProcessor')
 const { getPineconeIndex } = require('../config/rag')
@@ -49,6 +50,17 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file provided' })
+    }
+
+    // Check free plan document limit
+    const user = await User.findById(req.userId)
+    if (user.plan === 'free') {
+      const docCount = await Document.countDocuments({ userId: req.userId })
+      if (docCount >= 2) {
+        return res.status(403).json({
+          message: 'Free plan limit reached: 2 documents maximum. Upgrade to Pro for unlimited documents.',
+        })
+      }
     }
 
     // Step 1: Save document metadata to MongoDB
