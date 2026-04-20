@@ -379,7 +379,7 @@ DocuMind/
 
 ## Screenshots
 
-> Coming soon
+![DocuMind](./DocuMind.png)
 
 ---
 
