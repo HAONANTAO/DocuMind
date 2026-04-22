@@ -11,6 +11,8 @@ Upload any PDF and instantly chat with it. DocuMind indexes your document into a
 
 **Live Demo:** [https://docu-mind-neon.vercel.app](https://docu-mind-neon.vercel.app)
 
+![DocuMind](./DocuMind.png)
+
 ---
 
 ## Features
@@ -374,12 +376,6 @@ DocuMind/
             ├── Chat.jsx              # Streaming chat interface
             └── Pricing.jsx           # Pricing tiers
 ```
-
----
-
-## Screenshots
-
-![DocuMind](./DocuMind.png)
 
 ---
 
