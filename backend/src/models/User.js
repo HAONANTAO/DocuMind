@@ -22,4 +22,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+// `unique: true` on email already creates a unique index. No additional
+// indexes are needed on this small collection.
+
 module.exports = mongoose.model('User', userSchema)

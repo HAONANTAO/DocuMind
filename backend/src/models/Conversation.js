@@ -48,4 +48,10 @@ const conversationSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+// Each (userId, documentId) pair has at most one conversation, and every
+// chat request looks it up by exactly that pair. Unique compound index gives
+// us both fast lookups and a DB-level guarantee against duplicates from a
+// race between two concurrent first-message requests.
+conversationSchema.index({ userId: 1, documentId: 1 }, { unique: true })
+
 module.exports = mongoose.model('Conversation', conversationSchema)

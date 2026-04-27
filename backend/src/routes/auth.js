@@ -5,6 +5,8 @@ const User = require('../models/User')
 const Document = require('../models/Document')
 const Conversation = require('../models/Conversation')
 const auth = require('../middleware/auth')
+const { authLimiter } = require('../middleware/rateLimit')
+const { validate, registerSchema, loginSchema } = require('../lib/validators')
 
 const router = express.Router()
 
@@ -19,7 +21,7 @@ const router = express.Router()
  * @param {string} req.body.email
  * @param {string} req.body.password - Plain-text; never stored
  */
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, validate(registerSchema), async (req, res) => {
   try {
     const { email, password } = req.body
 
@@ -58,7 +60,7 @@ router.post('/register', async (req, res) => {
  * @param {string} req.body.email
  * @param {string} req.body.password
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body
 

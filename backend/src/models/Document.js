@@ -43,4 +43,9 @@ const documentSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+// Speeds up the document list query (find by user, newest first), which is
+// run on every dashboard load and on every chat request (count for free-tier
+// limit check).
+documentSchema.index({ userId: 1, createdAt: -1 })
+
 module.exports = mongoose.model('Document', documentSchema)

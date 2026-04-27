@@ -1,6 +1,8 @@
 const express = require('express')
 const { HumanMessage, AIMessage } = require('@langchain/core/messages')
 const auth = require('../middleware/auth')
+const { chatLimiter } = require('../middleware/rateLimit')
+const { validate, chatSchema } = require('../lib/validators')
 const Document = require('../models/Document')
 const User = require('../models/User')
 const Conversation = require('../models/Conversation')
@@ -23,15 +25,9 @@ const router = express.Router()
  * @param {string} req.body.documentId - The document to query
  * @param {string} req.body.question   - The user's natural-language question
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, chatLimiter, validate(chatSchema), async (req, res) => {
   try {
     const { documentId, question } = req.body
-
-    if (!documentId || !question) {
-      return res
-        .status(400)
-        .json({ message: 'documentId and question are required' })
-    }
 
     // Check free plan weekly question limit
     const user = await User.findById(req.userId)

@@ -211,7 +211,8 @@ The app will be available at `http://localhost:3000`.
 | `PINECONE_API_KEY` | Pinecone API key | Yes |
 | `PINECONE_INDEX` | Pinecone index name (must be `documind`) | Yes |
 | `OPENAI_API_KEY` | OpenAI API key | Yes |
-| `ALLOWED_ORIGIN` | Frontend origin allowed by CORS (e.g. `https://your-app.vercel.app`). If unset, all origins are allowed — **must be set in production** | No (dev only) |
+| `NODE_ENV` | `production` enforces strict CORS and disables localhost fallback | No |
+| `ALLOWED_ORIGIN` | Comma-separated list of frontend origins allowed by CORS (e.g. `https://your-app.vercel.app`). **Required** when `NODE_ENV=production` — the server refuses to start without it. In development `http://localhost:*` is always accepted. | Yes (prod) |
 
 ### Frontend
 
@@ -376,6 +377,25 @@ DocuMind/
             ├── Chat.jsx              # Streaming chat interface
             └── Pricing.jsx           # Pricing tiers
 ```
+
+---
+
+## Security
+
+DocuMind is deployed with the following hardening:
+
+- **Helmet** — sets standard security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.) on every response
+- **Strict CORS** — `ALLOWED_ORIGIN` is required in production; the server refuses to start without it. `*` fallback is intentionally not supported
+- **Rate limiting** — `express-rate-limit` on `/auth/*` (10 attempts per IP per 15 min) and `/chat/*` (30 requests per user per minute, keyed by JWT user id)
+- **Input validation** — all user input (`/auth/register`, `/auth/login`, `/chat`) is validated with `zod` schemas before reaching business logic
+- **Password rules** — minimum 8 characters with at least one letter and one digit; bcrypt cost factor 10
+- **Per-tenant data isolation** — every MongoDB query filters by `userId`; Pinecone uses one namespace per user (`user_{userId}`) so vectors cannot leak across accounts
+- **No user enumeration** — `/auth/login` returns the same generic error for unknown emails and wrong passwords
+
+### Known limitations
+
+- **JWT in `localStorage`** — the frontend currently stores the auth token in `localStorage`, which is readable by JavaScript and therefore vulnerable to XSS if any dependency is compromised. Switching to an httpOnly cookie + CSRF token is on the short-term roadmap. Mitigation today: strict CSP via Helmet, no `dangerouslySetInnerHTML` outside of DOMPurify-sanitised markdown rendering
+- **No automated tests yet** — the security controls above are reviewed manually; an integration test suite (auth, rate-limit, CORS) is the next priority
 
 ---
 
